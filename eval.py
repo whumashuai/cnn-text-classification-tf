@@ -80,7 +80,44 @@ with graph.as_default():
         for x_test_batch in batches:
             batch_predictions = sess.run(predictions, {input_x: x_test_batch, dropout_keep_prob: 1.0})
             all_predictions = np.concatenate([all_predictions, batch_predictions])
+          
+'''
+#Evaluation measures
+sess = tf.Session()
+all_predictions = np.asanyarray(all_predictions, dtype=np.int64)
+p_test = tf.equal(y_test, 1)
+n_test = tf.equal(y_test, 0)
+p_prediction = tf.boolean_mask(all_predictions, p_test)
+p_label = tf.boolean_mask(y_test, p_test)
+tp = tf.reduce_sum(tf.cast(tf.equal(p_prediction, p_label), "float"), name="tp")
+fp = tf.subtract(tf.reduce_sum(tf.cast(tf.equal(all_predictions, 1), "float")), tp)
+n_prediction = tf.boolean_mask(all_predictions, n_test)
+n_label = tf.boolean_mask(y_test, n_test)
+tn = tf.reduce_sum(tf.cast(tf.equal(n_prediction, n_label), "int64"), name="tn")
+fn = tf.subtract(tf.reduce_sum(tf.cast(tf.equal(all_predictions, 0), "int64")), tn)
+    
+# cast tp, fp, tn, fn to float64
+tp = tf.cast(tp, tf.float64)
+fp = tf.cast(fp, tf.float64)
+tn = tf.cast(tn, tf.float64)
+fn = tf.cast(fn, tf.float64)
+# Precision
+precision = tf.div(tp, tf.add(tp, fp), name="precision")
+# Recall
+recall = tf.div(tp, tf.add(tp, fn), name="recall")
+# F1-score
+product = tf.multiply(tf.cast(tf.constant(2.0), tf.float64), tf.multiply(precision, recall))
+f1_score = tf.div(product, tf.add(precision, recall), name="f1_score")
 
+# Print accuracy if y_test is defined
+if y_test is not None:
+    correct_predictions = float(sum(all_predictions == y_test))
+    print("Total number of test examples: {}".format(len(y_test)))
+    print("Accuracy: {:g}".format(correct_predictions / float(len(y_test))))
+    print("Precision:{:g}".format(sess.run(precision)))
+    print("Recall:{:g}".format(sess.run(recall)))
+    print("F1_score:{:g}".format(sess.run(f1_score)))
+'''
 # Print accuracy if y_test is defined
 if y_test is not None:
     correct_predictions = float(sum(all_predictions == y_test))
